@@ -25,8 +25,6 @@ import scipy.stats as stats
 # Change folder to C:\Users\ag11afr\.spyder-py3\Balance_Data
 
 
-os.chdir("Balance_Data")
-
 
 # Create dataFrame for COP data, then seperate ML and AP (ML = Mediloateral, AP = Anteroposterior) for single participant eyes open
 
@@ -78,8 +76,8 @@ print(df)
 
 
 #Seperate Data into Closed and Open Eyes DataFrames
-Open_Eyes_Data = df.loc[df['RAW FileName'].str.contains("Open", case=False)]
-Closed_Eyes_Data = df.loc[df['RAW FileName'].str.contains("closed", case=False)]
+Open_Eyes_Data = df.loc[df['RAW File_Name'].str.contains("Open", case=False)]
+Closed_Eyes_Data = df.loc[df['RAW File_Name'].str.contains("closed", case=False)]
 
 #calculating mean for FSFA Score from chosen variable e.g. ML Low Alpha (cop_def)
 #for independent variable (e.g.eyes open or closed)data
@@ -133,7 +131,7 @@ ax.bar(x_pos, means, yerr=stdevs, align='center', alpha=0.5, ecolor='black', cap
 ax.set_ylabel('Low frequencey COP position (mm)')
 ax.set_xticks(x_pos)
 ax.set_xticklabels(conditions)
-ax.set_title(' ')
+ax.set_title('Balance Condition')
 ax.yaxis.grid(False)
 plt.text(-0.015, 1.42, "*")
 
