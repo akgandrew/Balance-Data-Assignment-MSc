@@ -5,13 +5,6 @@ Created on Sat Nov 19 01:26:48 2022
 @author: ag11afr
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Nov 18 08:26:54 2022
-
-@author: ag11afr
-"""
-
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -39,13 +32,12 @@ df_eyes_closed = pd.read_excel("scp03_Session_2_eyes_closed_29_9_2021_Balance_Pe
 df_eyes_closed_COP_ML = df_eyes_closed.iloc[16:,4]
 df_eyes_closed_COP_AP = df_eyes_closed.iloc[16:,5]
 
-
-"""
-Funtion sets mean of cop data to zero so the data is normalised between participants.
-"""
 def zero_cop_data(cop_data):
-   cop_data = cop_data - cop_data.mean(axis = 0)
-   return cop_data   
+    """
+    adjusts data so mean of cop data is zero so the data is normalised between participants.
+    """
+    cop_data = cop_data - cop_data.mean(axis = 0)
+    return cop_data   
 
 # all cop data zeroed about the mean
 df_eyes_closed_COP_ML = zero_cop_data(df_eyes_closed_COP_ML)
@@ -59,8 +51,8 @@ plt.figure()
 plt.plot(df_eyes_open_COP_ML, df_eyes_open_COP_AP,'r', label="Eyes open")
 plt.plot(df_eyes_closed_COP_ML, df_eyes_closed_COP_AP, 'b', label="Eyes closed")
 
-plt.xlabel("COP Mediolateral displacement (mm)")
-plt.ylabel("COP Anteriorposterior displacement (mm)")
+plt.xlabel("COP AP displacement (mm)")
+plt.ylabel("COP ML displacement (mm)")
 plt.legend()
 plt.xlim(-0.5, 0.5)
 plt.show()
@@ -74,64 +66,55 @@ df = pd.read_excel("COP_FsFA_Processed_Data.xls")
 print(df)
 
 
-
 #Seperate Data into Closed and Open Eyes DataFrames
-Open_Eyes_Data = df.loc[df['RAW File_Name'].str.contains("Open", case=False)]
-Closed_Eyes_Data = df.loc[df['RAW File_Name'].str.contains("closed", case=False)]
+open_eyes_data = df.loc[df['RAW File_Name'].str.contains("Open", case=False)]
+closed_eyes_data = df.loc[df['RAW File_Name'].str.contains("closed", case=False)]
 
 #calculating mean for FSFA Score from chosen variable e.g. ML Low Alpha (cop_def)
 #for independent variable (e.g.eyes open or closed)data
-def cop_mean(cop_def, cop_data):
-    cop_data = cop_data[cop_def].mean(axis=0)
-    return cop_data
 
-Mean_Closed_Eyes =cop_mean("RIGHTCOPMLLOW_alpha",Closed_Eyes_Data )
-Mean_Open_Eyes =cop_mean("RIGHTCOPMLLOW_alpha",Open_Eyes_Data )
-
-#calculating standad deviation for FSFA Score from chosen variable e.g. ML Low Alpha (cop_def)
-#for FSFa COP data defined by independent variable e.g.eyes open or closed ((cop_data))
-
-def cop_stdev(cop_def, cop_data):
-    cop_data = cop_data[cop_def].std(axis=0)
-    return cop_data
-
-Stdev_Closed_Eyes =cop_stdev("RIGHTCOPMLLOW_alpha",Closed_Eyes_Data )
-Stdev_Open_Eyes =cop_stdev("RIGHTCOPMLLOW_alpha",Open_Eyes_Data )
+def cop_mean_stdev (cop_def, cop_data):
+    cop_data_m = cop_data[cop_def].mean(axis=0)
+    cop_data_s = cop_data[cop_def].std(axis=0)
+    mean_and_stdev = np.array([cop_data_m, cop_data_s])
+    return mean_and_stdev
 
 
+mean_closed_eyes = cop_mean_stdev("RIGHTCOPMLLOW_alpha",closed_eyes_data )[0]
+stdev_closed_eyes = cop_mean_stdev("RIGHTCOPMLLOW_alpha",closed_eyes_data )[1]
+mean_open_eyes = cop_mean_stdev("RIGHTCOPMLLOW_alpha",open_eyes_data )[0]
+stdev_open_eyes = cop_mean_stdev("RIGHTCOPMLLOW_alpha",open_eyes_data )[1]
 
-conditions =  ['Eyes Open', 'Eyes Closed']
 
-#Makes seperate arrays of mediolateral, low alpha, rightfoot FSFA Score in closed and open eyes
-eyes_open_data = Open_Eyes_Data["RIGHTCOPMLLOW_alpha"]
-eyes_closed_data = Closed_Eyes_Data["RIGHTCOPMLLOW_alpha"]
+conditions =  ['Eyes Closed', 'Eyes Open']
 
-def cop_Ttest(cop_def, cop_data1, cop_data2):
-    Ttest_result = stats.ttest_rel(cop_data1[cop_def], cop_data2[cop_def])
+#Makes seperate arrays of mediolateral, low alpha, rightfoot FSFA Score in closed and open eyes then performs Ttest reporting tvalue[0][ and p value[1]
+#Enter dataframe column name for extraction (data_col) from dataframe 1 (df1) and dataframe 2 (df2)
+def cop_Ttest(data_col, df1, df2):
+    """Performs Ttest on same columns of data from 2 different dataframes reporting t value[0] and p value[1]"""
+    Ttest_result = stats.ttest_rel(df1[data_col], df2[data_col])
     return Ttest_result
 
-Ttest_Result = cop_Ttest("RIGHTCOPMLLOW_alpha", Open_Eyes_Data, Closed_Eyes_Data)
-
-
-
-#creates array of means ready for plot
-means = [Mean_Closed_Eyes, Mean_Open_Eyes]
+r_p_value = cop_Ttest("RIGHTCOPMLLOW_alpha", open_eyes_data, closed_eyes_data)[1]
+r_t_value = cop_Ttest("RIGHTCOPMLLOW_alpha", open_eyes_data, closed_eyes_data)[0]
 
 #creates array of means ready for plot
-stdevs = [Stdev_Closed_Eyes, Stdev_Open_Eyes]
+means = [mean_closed_eyes, mean_open_eyes]
+
+#creates array of means ready for plot
+stdevs = [stdev_closed_eyes, stdev_open_eyes]
 
 #creates array with the number of data sets (bars) in the graph
 x_pos = np.arange(len(conditions))
 
 
-
 # Build the plot
 fig, ax = plt.subplots()
 ax.bar(x_pos, means, yerr=stdevs, align='center', alpha=0.5, ecolor='black', capsize=10)
-ax.set_ylabel('Low frequencey COP position (mm)')
+ax.set_ylabel('α long term on COP position')
 ax.set_xticks(x_pos)
 ax.set_xticklabels(conditions)
-ax.set_title('Balance Condition')
+#ax.set_title('Right Foot')
 ax.yaxis.grid(False)
 plt.text(-0.015, 1.42, "*")
 
@@ -141,9 +124,7 @@ plt.savefig('Eyes Open vs Eyes Closed ml_la_rt.png')
 plt.show()
 
 
-var1 = Open_Eyes_Data["RIGHTCOPMLLOW_alpha"] 
-var2 = Open_Eyes_Data["LEFTCOPMLLOW_alpha"] 
-p = 0.05
+
 ##Identifies ratio of one variable (var1) to another ((var2) within subject so equal amounts, and reports percentage of variable being larger abover a percentage freshold (p) 
 def ratio_with_sig_dif(var1, var2, p):
     var_size = var1.shape[0]
@@ -158,8 +139,8 @@ def ratio_with_sig_dif(var1, var2, p):
 
 
 #Returns bias with number of right side highest, then left then no sig difference at p<0.05. note high score is poor balance so left and right switch in pie charts.
-right_left_non_sig_bias_eyes_open = ratio_with_sig_dif(Open_Eyes_Data["RIGHTCOPMLLOW_alpha"] , Open_Eyes_Data["LEFTCOPMLLOW_alpha"] , 0.05)
-right_left_non_sig_bias_eyes_closed = ratio_with_sig_dif(Closed_Eyes_Data["RIGHTCOPMLLOW_alpha"] , Closed_Eyes_Data["LEFTCOPMLLOW_alpha"] , 0.05)
+right_left_non_sig_bias_eyes_open = ratio_with_sig_dif(open_eyes_data["RIGHTCOPMLLOW_alpha"] , open_eyes_data["LEFTCOPMLLOW_alpha"] , 0.05)
+right_left_non_sig_bias_eyes_closed = ratio_with_sig_dif(closed_eyes_data["RIGHTCOPMLLOW_alpha"] , closed_eyes_data["LEFTCOPMLLOW_alpha"] , 0.05)
 
 
 
@@ -168,10 +149,10 @@ right_left_non_sig_bias_eyes_closed = ratio_with_sig_dif(Closed_Eyes_Data["RIGHT
 
 #Plots a pie chart comparing right and left bias in participants with eyes open
 
-balance_bias_labels = ["Left", "Right", "None"]
+balance_bias_labels = ["Non-dominant", "Dominant", "None"]
 plt.figure()
 plt.pie(right_left_non_sig_bias_eyes_open, labels=balance_bias_labels, normalize=True)
-plt.title("Eyes open balance side bias")
+plt.title("Eyes open - α long term on COP position side bias")
 plt.show()
 plt.tight_layout()
 plt.savefig('Eyes open balance side bias.png')
@@ -179,11 +160,10 @@ plt.savefig('Eyes open balance side bias.png')
 
 #Plots a pie chart comparing right and left bias in participants with eyes closed
 
-
-balance_bias_labels = ["Left", "Right", "None"]
+balance_bias_labels = ["Non-dominant", "Dominant", "None"]
 plt.figure()
 plt.pie(right_left_non_sig_bias_eyes_closed, labels=balance_bias_labels, normalize=True)
-plt.title("Eyes closed balance side bias")
+plt.title("Eyes closed - α long term on COP position side bias")
 plt.show()
 plt.tight_layout()
 plt.savefig('test Eyes Open vs Eyes Closed ml_la_rt.png')
